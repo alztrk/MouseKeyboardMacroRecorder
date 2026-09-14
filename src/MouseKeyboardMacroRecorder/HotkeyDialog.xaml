@@ -84,7 +84,7 @@
                            VerticalAlignment="Center" />
                 <TextBox x:Name="RecordHotkeyBox"
                          Grid.Column="1"
-                         Style="{StaticResource TextInputStyle}"
+                         Style="{StaticResource InputStyle}"
                          PreviewKeyDown="HotkeyBox_PreviewKeyDown"
                          ToolTip="Press a key or key combination" />
             </Grid>
@@ -98,7 +98,7 @@
                            VerticalAlignment="Center" />
                 <TextBox x:Name="PlayHotkeyBox"
                          Grid.Column="1"
-                         Style="{StaticResource TextInputStyle}"
+                         Style="{StaticResource InputStyle}"
                          PreviewKeyDown="HotkeyBox_PreviewKeyDown"
                          ToolTip="Press a key or key combination" />
             </Grid>
@@ -112,7 +112,7 @@
                            VerticalAlignment="Center" />
                 <TextBox x:Name="StopHotkeyBox"
                          Grid.Column="1"
-                         Style="{StaticResource TextInputStyle}"
+                         Style="{StaticResource InputStyle}"
                          PreviewKeyDown="HotkeyBox_PreviewKeyDown"
                          ToolTip="Press a key or key combination" />
             </Grid>
