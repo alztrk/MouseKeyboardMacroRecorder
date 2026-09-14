@@ -24,4 +24,3 @@ Do not attach real macro recordings if they may contain passwords, authenticatio
 - The application must not upload macro contents or desktop input.
 - Emergency stop must remain available while automation is active.
 - Errors must not expose secrets or raw sensitive input in logs.
-

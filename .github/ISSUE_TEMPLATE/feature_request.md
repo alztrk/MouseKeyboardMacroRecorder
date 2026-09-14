@@ -16,4 +16,3 @@ labels: enhancement
 ## Safety and scope
 
 <!-- Explain whether this affects input permissions, privacy, persistence, or playback safety. -->
-

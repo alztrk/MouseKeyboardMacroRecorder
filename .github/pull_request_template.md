@@ -28,4 +28,3 @@
 - [ ] Documentation is updated when needed.
 - [ ] No secrets, personal data, or real input recordings are included.
 - [ ] No unrelated generated files are included.
-
