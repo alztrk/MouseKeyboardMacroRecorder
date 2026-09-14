@@ -890,7 +890,15 @@ public partial class MainWindow : Window, IDisposable
                     await PlayAsync();
                     break;
                 case HotkeyCommand.Stop:
-                    await StopAsync();
+                    if (_coordinator.State == AutomationState.Recording)
+                    {
+                        RecordButton_Click(this, new RoutedEventArgs());
+                    }
+                    else
+                    {
+                        await StopAsync();
+                    }
+
                     break;
             }
         }

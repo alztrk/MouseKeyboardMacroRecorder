@@ -173,7 +173,7 @@
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Click="StopButton_Click"
                                 MinWidth="86"
-                                ToolTip="Stop active automation (Esc)">
+                                ToolTip="Stop active automation">
                             <StackPanel Orientation="Horizontal">
                                 <materialIcons:MaterialIcon Kind="Stop"
                                                             Width="15"
