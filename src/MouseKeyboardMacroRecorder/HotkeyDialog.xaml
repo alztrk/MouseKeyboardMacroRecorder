@@ -1,0 +1,128 @@
+<Window x:Class="MouseKeyboardMacroRecorder.HotkeyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:materialIcons="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
+        Title="Hotkeys"
+        Width="360"
+        Height="300"
+        MinWidth="340"
+        MinHeight="280"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource CanvasBrush}">
+    <WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="5"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Grid Background="{DynamicResource CanvasBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="46" />
+            <RowDefinition Height="1" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{DynamicResource SurfaceBrush}"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="16,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="24"
+                            Height="24"
+                            Background="{DynamicResource AccentBrush}"
+                            CornerRadius="{StaticResource SmallRadius}"
+                            Margin="0,0,8,0">
+                        <materialIcons:MaterialIcon Kind="Keyboard"
+                                                    Width="15"
+                                                    Height="15"
+                                                    Foreground="White"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="Hotkeys"
+                               Style="{StaticResource TitleBarTextStyle}" />
+                </StackPanel>
+                <Button Style="{StaticResource CloseWindowButtonStyle}"
+                        Width="34"
+                        Height="30"
+                        HorizontalAlignment="Right"
+                        Click="CloseButton_Click"
+                        ToolTip="Close">
+                    <materialIcons:MaterialIcon Kind="Close"
+                                                Width="15"
+                                                Height="15" />
+                </Button>
+            </Grid>
+        </Border>
+        <Border Grid.Row="1" Background="{DynamicResource BorderBrush}" />
+
+        <Grid Grid.Row="2" Margin="24,20,24,12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="122" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Record"
+                           Style="{StaticResource FieldLabelTextStyle}"
+                           VerticalAlignment="Center" />
+                <ComboBox x:Name="RecordComboBox"
+                          Grid.Column="1"
+                          Style="{StaticResource SelectStyle}" />
+            </Grid>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="122" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Play"
+                           Style="{StaticResource FieldLabelTextStyle}"
+                           VerticalAlignment="Center" />
+                <ComboBox x:Name="PlayComboBox"
+                          Grid.Column="1"
+                          Style="{StaticResource SelectStyle}" />
+            </Grid>
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="122" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Stop"
+                           Style="{StaticResource FieldLabelTextStyle}"
+                           VerticalAlignment="Center" />
+                <ComboBox x:Name="StopComboBox"
+                          Grid.Column="1"
+                          Style="{StaticResource SelectStyle}" />
+            </Grid>
+        </Grid>
+
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="24,0,24,20">
+            <Button Style="{StaticResource SecondaryButtonStyle}"
+                    MinWidth="82"
+                    Margin="0,0,8,0"
+                    Click="CancelButton_Click">
+                <TextBlock Text="Cancel" />
+            </Button>
+            <Button Style="{StaticResource PrimaryButtonStyle}"
+                    MinWidth="82"
+                    Click="ApplyButton_Click">
+                <TextBlock Text="Apply" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>
