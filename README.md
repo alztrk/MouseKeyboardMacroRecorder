@@ -12,9 +12,11 @@ The project is designed for local, transparent automation. Macro files remain un
 - Adjust playback speed and the delay between loops.
 - Configure function-key hotkeys for record, play, and stop, with conflict reporting.
 - Run a separate auto-clicker with left, right, or middle button, interval, repeat, and current/fixed cursor position controls.
+- Allow a zero-millisecond auto-click interval for maximum-rate clicking.
 - Save and load portable versioned JSON macro files.
 - Stop active automation immediately with the stop hotkey or stop button, releasing any held input.
 - Keep the selected theme and runtime preferences across launches.
+- Show immediate inline validation, a themed error dialog, and a Windows notification when an operation fails.
 
 ## Scope and safety
 
@@ -24,7 +26,7 @@ The first target platform is Windows 10 and later on x64 Windows. The publish sc
 
 ## Implementation status
 
-The first usable desktop workflow is implemented. The C# solution contains a platform-independent core, a Windows native adapter, the WPF command surface, and deterministic service tests. Recording uses low-level Windows hooks, playback and auto-clicking use `SendInput`, and all active input is released during cancellation or shutdown. Product identity, runtime limits, user-data paths, defaults, and publish settings are centralized so the UI and infrastructure do not silently drift apart.
+The first usable desktop workflow is implemented. The C# solution contains a platform-independent core, a Windows native adapter, the WPF command surface, and deterministic service tests. Recording uses low-level Windows hooks, playback and auto-clicking use `SendInput`, and all active input is released during cancellation or shutdown. Product identity, runtime limits, user-data paths, defaults, and publish settings are centralized so the UI and infrastructure do not silently drift apart. Invalid settings are reported beside their inputs before an operation starts; operation failures are also sent to the Windows notification area.
 
 The application has no web server, account, telemetry, or network dependency. Macro files are explicit `.macro.json` files selected by the user through import and export dialogs. The selected theme is saved locally at `%LOCALAPPDATA%\MouseKeyboardMacroRecorder\settings.json`; other preferences are stored at `%LOCALAPPDATA%\MouseKeyboardMacroRecorder\preferences.json`.
 
@@ -53,15 +55,15 @@ Run the configured checks:
 dotnet test --configuration Release
 ```
 
-The test project covers JSON round trips, malformed input, recording timing, cancellation release, auto-click repeat counts, and atomic macro persistence. The repeatable distribution command is:
+The test project covers JSON round trips, malformed input, recording timing, cancellation release, auto-click repeat counts, zero-interval preference normalization, and atomic macro persistence. The repeatable distribution command is:
 
 ```text
 pwsh ./scripts/publish.ps1 -Target All -RuntimeIdentifier win-x64
 ```
 
-This produces a self-contained portable folder under `outputs/portable/win-x64`, an Inno Setup installer under `outputs/installer`, and a release manifest with SHA-256 information. The installer source lives in `packaging/MouseKeyboardMacroRecorder.iss`. Install Inno Setup 7 before requesting an installer build, or pass `-InnoSetupCompiler` with the path to `ISCC.exe`.
+This produces a single-file self-contained executable at `release/MouseKeyboardMacroRecorder.exe`, an optional Inno Setup installer under `release/installer`, and a release manifest with SHA-256 information. The installer source lives in `packaging/MouseKeyboardMacroRecorder.iss`. Install Inno Setup 7 before requesting an installer build, or pass `-InnoSetupCompiler` with the path to `ISCC.exe`.
 
-Brand assets are stored in `src/MouseKeyboardMacroRecorder/Assets`. The project ships light and dark SVG wordmarks, mark-only variants, and a multi-resolution `favicon.ico` used by the WPF window and Windows executable. Generated portable and installer outputs are ignored by Git; source packaging definitions remain reviewable.
+Brand assets are stored in `src/MouseKeyboardMacroRecorder/Assets`. The project ships light and dark SVG wordmarks, mark-only variants, and a multi-resolution `favicon.ico` used by the WPF window and Windows executable. The generated `release` folder and release manifest are ignored by Git; source packaging definitions remain reviewable.
 
 ## Repository layout
 

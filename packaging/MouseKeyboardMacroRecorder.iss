@@ -7,11 +7,11 @@
 #endif
 
 #ifndef PortableDir
-#define PortableDir "..\outputs\portable\win-x64"
+#define PortableDir "..\release"
 #endif
 
 #ifndef InstallerOutput
-#define InstallerOutput "..\outputs\installer"
+#define InstallerOutput "..\release\installer"
 #endif
 
 #define AppExecutable "MouseKeyboardMacroRecorder.exe"
@@ -29,7 +29,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#InstallerOutput}
 OutputBaseFilename=MouseKeyboardMacroRecorder-Setup-{#AppVersion}
-SetupIconFile={#PortableDir}\Assets\favicon.ico
+SetupIconFile=..\src\MouseKeyboardMacroRecorder\Assets\favicon.ico
 UninstallDisplayIcon={app}\{#AppExecutable}
 Compression=lzma2/ultra64
 SolidCompression=yes

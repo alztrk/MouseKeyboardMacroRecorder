@@ -12,8 +12,8 @@ pwsh ./scripts/publish.ps1 -Target All -RuntimeIdentifier win-x64
 
 Targets:
 
-- `Portable`: produces a self-contained folder under `outputs/portable/<runtime>`.
-- `Installer`: packages the existing portable folder with Inno Setup.
+- `Portable`: produces a single-file self-contained executable under `release`.
+- `Installer`: packages the existing release folder with Inno Setup.
 - `All`: produces both artifacts from the same publish.
 
 The script discovers `ISCC.exe` from `PATH` or the Windows uninstall registry. Use `-InnoSetupCompiler <path to ISCC.exe>` only when automatic discovery is not suitable. The script reads the version and product name from MSBuild, so the installer filename and metadata do not need a second version constant.

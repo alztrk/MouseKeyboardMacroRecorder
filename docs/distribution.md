@@ -28,6 +28,8 @@ pwsh ./scripts/publish.ps1 `
 
 The installer is per-user by default and installs to `%LOCALAPPDATA%\Programs\Mouse Keyboard Macro Recorder`. It creates a Start Menu shortcut and offers an unchecked desktop shortcut. It does not remove application preferences or macro files during uninstall.
 
+The application is self-contained at runtime. It uses the Windows notification area for immediate operation errors and does not require a web server, account, or background service.
+
 ## Release evidence
 
-Every publish writes `outputs/release-manifest-<runtime>.json` with the resolved MSBuild version, runtime, relative artifact paths, and SHA-256 values for the portable executable and, when requested, the installer. Signing is intentionally a separate release step because it requires a project-owned certificate and timestamping policy.
+Every publish writes `release-manifest-<runtime>.json` at the repository root with the resolved MSBuild version, runtime, relative artifact paths, and SHA-256 values for the release executable and, when requested, the installer. Signing is intentionally a separate release step because it requires a project-owned certificate and timestamping policy.
