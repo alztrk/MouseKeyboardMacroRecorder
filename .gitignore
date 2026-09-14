@@ -1,0 +1,26 @@
+bin/
+obj/
+.vs/
+TestResults/
+dist/
+build/
+outputs/
+work/
+*.log
+
+# Generated logo review previews
+logo-preview.png
+logo-small-preview.png
+
+# Local application data and recorded user input
+recordings/
+profiles/
+*.macro.json
+*.macro.tmp
+
+# IDE and OS files
+.idea/
+.vscode/
+*.user
+Thumbs.db
+Desktop.ini
