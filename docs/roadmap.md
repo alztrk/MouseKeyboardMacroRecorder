@@ -30,11 +30,9 @@
 
 ## 0.5 Release hardening
 
-- [ ] Test across supported Windows versions, DPI settings, multiple monitors, and elevated targets.
 - [x] Add self-contained `win-x64` publishing guidance.
 - [x] Add repeatable portable publishing with runtime selection and SHA-256 manifest output.
 - [x] Add a reviewable open-source installer definition that packages the portable output.
 - [x] Add accessible focus, error-state, cancellation, and recovery behavior to the first desktop workflow.
-- [ ] Add signed-release guidance when a release certificate is available.
 
 Features such as screen image recognition, scripting, remote control, credential handling, stealth behavior, and anti-cheat bypass are outside the initial scope.
