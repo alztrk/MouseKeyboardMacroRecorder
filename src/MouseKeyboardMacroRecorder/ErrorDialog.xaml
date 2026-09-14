@@ -1,0 +1,72 @@
+<Window x:Class="MouseKeyboardMacroRecorder.ErrorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:materialIcons="clr-namespace:Material.Icons.WPF;assembly=Material.Icons.WPF"
+        Title="Operation could not be completed"
+        Width="430"
+        MinWidth="360"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource CanvasBrush}">
+    <WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="5"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Border Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource ControlRadius}"
+            Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="42" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Width="34"
+                    Height="34"
+                    Background="{DynamicResource ErrorSoftBrush}"
+                    CornerRadius="17"
+                    VerticalAlignment="Top">
+                <materialIcons:MaterialIcon Kind="AlertCircleOutline"
+                                            Width="20"
+                                            Height="20"
+                                            Foreground="{DynamicResource ErrorBrush}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+            </Border>
+
+            <StackPanel Grid.Column="1" Margin="14,0,0,0">
+                <TextBlock Text="Operation could not be completed"
+                           Style="{StaticResource DialogTitleTextStyle}" />
+                <TextBlock x:Name="MessageText"
+                           Margin="0,8,0,0"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource MutedInkBrush}"
+                           LineHeight="20"
+                           MaxWidth="330" />
+            </StackPanel>
+
+            <Button Grid.Row="1"
+                    Grid.Column="1"
+                    HorizontalAlignment="Right"
+                    MinWidth="82"
+                    Margin="0,22,0,0"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="CloseButton_Click">
+                <TextBlock Text="OK" />
+            </Button>
+        </Grid>
+    </Border>
+</Window>

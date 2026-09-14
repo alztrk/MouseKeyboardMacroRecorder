@@ -13,6 +13,9 @@ using MouseKeyboardMacroRecorder.Core.Application;
 using MouseKeyboardMacroRecorder.Core.Domain;
 using MouseKeyboardMacroRecorder.Core.Infrastructure.Persistence;
 using MouseKeyboardMacroRecorder.Infrastructure.Windows;
+using WpfComboBox = System.Windows.Controls.ComboBox;
+using WpfBrush = System.Windows.Media.Brush;
+using WpfButton = System.Windows.Controls.Button;
 
 namespace MouseKeyboardMacroRecorder;
 
@@ -31,6 +34,7 @@ public partial class MainWindow : Window, IDisposable
     private readonly MacroPlaybackService _playback;
     private readonly AutoClickerService _autoClicker;
     private readonly AutomationCoordinator _coordinator;
+    private readonly WindowsNotificationService _notifications;
     private UserPreferences _preferences;
     private IDisposable? _hotkeyRegistration;
     private readonly SemaphoreSlim _hotkeyExecutionGate = new(1, 1);
@@ -41,6 +45,7 @@ public partial class MainWindow : Window, IDisposable
     private bool _closeRequested;
     private bool _isClosing;
     private bool _servicesDisposed;
+    private bool _autoIntervalValid = true;
 
     /// <summary>
     /// Creates the main application window and wires the desktop automation services.
@@ -60,6 +65,7 @@ public partial class MainWindow : Window, IDisposable
         _playback = new MacroPlaybackService(_injector, new SystemAsyncDelay());
         _autoClicker = new AutoClickerService(_injector, _cursorPosition, new SystemAsyncDelay());
         _coordinator = new AutomationCoordinator(_recorder, _playback, _autoClicker, _injector);
+        _notifications = new WindowsNotificationService();
 
         MacroItemsList.ItemsSource = _macroItems;
         _coordinator.StateChanged += Coordinator_StateChanged;
@@ -101,11 +107,14 @@ public partial class MainWindow : Window, IDisposable
 
     private void LoadWindowIcon()
     {
-        var icon = new System.Windows.Media.Imaging.BitmapImage();
-        icon.BeginInit();
-        icon.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-        icon.UriSource = new Uri("pack://application:,,,/Assets/favicon.ico", UriKind.Absolute);
-        icon.EndInit();
+        var iconUri = new Uri("pack://application:,,,/Assets/favicon.ico", UriKind.Absolute);
+        var decoder = new System.Windows.Media.Imaging.IconBitmapDecoder(
+            iconUri,
+            System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,
+            System.Windows.Media.Imaging.BitmapCacheOption.OnLoad);
+        var icon = decoder.Frames
+            .OrderByDescending(frame => frame.PixelWidth)
+            .First();
         icon.Freeze();
         Icon = icon;
     }
@@ -224,6 +233,7 @@ public partial class MainWindow : Window, IDisposable
         _capture.Error -= Capture_Error;
         _coordinator.Dispose();
         _injector.Dispose();
+        _notifications.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -394,7 +404,7 @@ public partial class MainWindow : Window, IDisposable
     private void UpdateThemeButton()
     {
         ThemeButton.ToolTip = ThemeManager.IsDarkTheme ? "Use light theme" : "Use dark theme";
-        ThemeIcon.Foreground = (Brush)FindResource("InkBrush");
+        ThemeIcon.Foreground = (WpfBrush)FindResource("InkBrush");
     }
 
     private void MacroModeButton_Click(object sender, RoutedEventArgs e)
@@ -685,7 +695,7 @@ public partial class MainWindow : Window, IDisposable
 
     private void RemoveMacroButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_coordinator.State != AutomationState.Idle || (sender as Button)?.Tag is not MacroListItem item)
+        if (_coordinator.State != AutomationState.Idle || (sender as WpfButton)?.Tag is not MacroListItem item)
         {
             return;
         }
@@ -852,6 +862,12 @@ public partial class MainWindow : Window, IDisposable
                     return;
                 }
 
+                if (e.Command == HotkeyCommand.Stop)
+                {
+                    _ = ExecuteStopHotkeyAsync();
+                    return;
+                }
+
                 _ = ExecuteHotkeyAsync(e.Command);
             }));
         }
@@ -860,6 +876,17 @@ public partial class MainWindow : Window, IDisposable
             // The dispatcher may be shutting down while the hotkey thread is still unwinding.
             Debug.WriteLine(exception);
         }
+    }
+
+    private async Task ExecuteStopHotkeyAsync()
+    {
+        if (_coordinator.State == AutomationState.Recording)
+        {
+            StopRecordingAndStore();
+            return;
+        }
+
+        await StopAsync();
     }
 
     private async Task ExecuteHotkeyAsync(HotkeyCommand command)
@@ -930,7 +957,7 @@ public partial class MainWindow : Window, IDisposable
         ExportButton.IsEnabled = isIdle && MacroItemsList.SelectedItem is not null;
         MacroModeButton.IsEnabled = isIdle;
         AutoClickerModeButton.IsEnabled = isIdle;
-        AutoClickerStartButton.IsEnabled = isIdle || isAutoClicking;
+        AutoClickerStartButton.IsEnabled = (isIdle || isAutoClicking) && (_autoIntervalValid || isAutoClicking);
         CaptureMouseCheckBox.IsEnabled = isIdle;
         CaptureKeyboardCheckBox.IsEnabled = isIdle;
         PlaybackRepeatComboBox.IsEnabled = isIdle;
@@ -1009,17 +1036,30 @@ public partial class MainWindow : Window, IDisposable
         }
 
         ShortcutHint.Text = message;
-        ShortcutHint.Foreground = (Brush)FindResource(isError ? "ErrorBrush" : "SubtleInkBrush");
+        ShortcutHint.Foreground = (WpfBrush)FindResource(isError ? "ErrorBrush" : "SubtleInkBrush");
         ShortcutHint.ToolTip = message;
     }
 
     private void ShowError(Exception exception)
     {
+        var message = GetUserErrorMessage(exception);
+        SetStatus("Action could not be completed.", isError: true);
+        _notifications.ShowError(message);
+        var dialog = new ErrorDialog(message)
+        {
+            Owner = this
+        };
+        dialog.ShowDialog();
+    }
+
+    private static string GetUserErrorMessage(Exception exception)
+    {
         var message = string.IsNullOrWhiteSpace(exception.Message)
             ? "The requested operation could not be completed."
             : exception.Message;
-        SetStatus(message, isError: true);
-        MessageBox.Show(this, message, ProductInfo.DisplayName, MessageBoxButton.OK, MessageBoxImage.Error);
+        return message
+            .Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)[0]
+            .Trim();
     }
 
     private PlaybackOptions BuildPlaybackOptions()
@@ -1074,7 +1114,7 @@ public partial class MainWindow : Window, IDisposable
         return new AutoClickerOptions(button, interval, repeatMode, repeatCount, positionMode, x, y);
     }
 
-    private static (RepeatMode Mode, int Count) ParseRepeat(ComboBox comboBox, RepeatMode defaultMode, int defaultCount)
+    private static (RepeatMode Mode, int Count) ParseRepeat(WpfComboBox comboBox, RepeatMode defaultMode, int defaultCount)
     {
         var tag = GetSelectedTag(comboBox);
         if (tag == "once")
@@ -1120,6 +1160,7 @@ public partial class MainWindow : Window, IDisposable
             FixedPositionPanel.Visibility = _preferences.AutoClickPositionMode == ClickPositionMode.FixedPosition
                 ? Visibility.Visible
                 : Visibility.Collapsed;
+            UpdateAutoIntervalValidation();
         }
         finally
         {
@@ -1196,7 +1237,8 @@ public partial class MainWindow : Window, IDisposable
             };
         }
 
-        if (int.TryParse(AutoIntervalTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var interval))
+        var intervalValid = UpdateAutoIntervalValidation();
+        if (intervalValid && int.TryParse(AutoIntervalTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var interval))
         {
             _preferences.AutoClickIntervalMilliseconds = interval;
         }
@@ -1215,6 +1257,40 @@ public partial class MainWindow : Window, IDisposable
         }
 
         PersistPreferences();
+    }
+
+    private bool UpdateAutoIntervalValidation()
+    {
+        if (!int.TryParse(AutoIntervalTextBox.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var interval))
+        {
+            SetAutoIntervalValidation("Enter a whole number between 0 ms and 24 hours.");
+            return false;
+        }
+
+        if (interval < AutomationLimits.MinimumAutoClickIntervalMilliseconds
+            || interval > AutomationLimits.MaximumAutoClickIntervalMilliseconds)
+        {
+            SetAutoIntervalValidation("Use a value between 0 ms and 24 hours.");
+            return false;
+        }
+
+        SetAutoIntervalValidation(null);
+        return true;
+    }
+
+    private void SetAutoIntervalValidation(string? message)
+    {
+        _autoIntervalValid = message is null;
+        AutoIntervalErrorText.Text = message ?? string.Empty;
+        AutoIntervalErrorPanel.Visibility = message is null ? Visibility.Collapsed : Visibility.Visible;
+        AutoIntervalTextBox.ToolTip = message;
+
+        if (IsInitialized)
+        {
+            var isAutoClicking = _coordinator.State == AutomationState.AutoClicking;
+            AutoClickerStartButton.IsEnabled = (_coordinator.State == AutomationState.Idle || isAutoClicking)
+                && (_autoIntervalValid || isAutoClicking);
+        }
     }
 
     private void AutoPositionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1290,7 +1366,7 @@ public partial class MainWindow : Window, IDisposable
         var playHotkey = HotkeyFormatting.Describe(new HotkeyBinding(HotkeyCommand.Play, _preferences.PlayHotkeyModifiers, _preferences.PlayHotkeyVirtualKey));
         var stopHotkey = HotkeyFormatting.Describe(new HotkeyBinding(HotkeyCommand.Stop, _preferences.StopHotkeyModifiers, _preferences.StopHotkeyVirtualKey));
         ShortcutHint.Text = $"{recordHotkey} record  ·  {playHotkey} play  ·  {stopHotkey} stop";
-        ShortcutHint.Foreground = (Brush)FindResource("SubtleInkBrush");
+        ShortcutHint.Foreground = (WpfBrush)FindResource("SubtleInkBrush");
         ShortcutHint.ToolTip = null;
         RecordButton.ToolTip = $"Start recording ({recordHotkey})";
         RecordNewMacroButton.ToolTip = $"Start recording ({recordHotkey})";
@@ -1316,13 +1392,13 @@ public partial class MainWindow : Window, IDisposable
             _preferences.RecordHotkeyVirtualKey));
     }
 
-    private static void SelectByTag(ComboBox comboBox, string tag)
+    private static void SelectByTag(WpfComboBox comboBox, string tag)
     {
         var item = comboBox.Items.OfType<ComboBoxItem>().FirstOrDefault(candidate => Equals(candidate.Tag, tag));
         comboBox.SelectedItem = item ?? comboBox.Items.OfType<ComboBoxItem>().FirstOrDefault();
     }
 
-    private static string? GetSelectedTag(ComboBox comboBox)
+    private static string? GetSelectedTag(WpfComboBox comboBox)
     {
         return (comboBox.SelectedItem as ComboBoxItem)?.Tag as string;
     }

@@ -1,5 +1,6 @@
 using MouseKeyboardMacroRecorder.Core.Application;
 using System.IO;
+using System.Windows;
 
 namespace MouseKeyboardMacroRecorder;
 
@@ -43,11 +44,12 @@ public partial class App : System.Windows.Application, IDisposable
                 System.Diagnostics.Debug.WriteLine(loggingException);
             }
 
-            System.Windows.MessageBox.Show(
-                $"The operation could not be completed.{Environment.NewLine}{Environment.NewLine}{args.Exception.Message}",
-                ProductInfo.DisplayName,
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Error);
+            var owner = Current.Windows.OfType<Window>().FirstOrDefault(window => window.IsVisible);
+            var dialog = new ErrorDialog(args.Exception.Message)
+            {
+                Owner = owner
+            };
+            dialog.ShowDialog();
         };
 
         ThemeManager.LoadSavedTheme();

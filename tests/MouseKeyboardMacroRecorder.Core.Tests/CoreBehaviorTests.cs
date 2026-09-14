@@ -168,7 +168,7 @@ public sealed class CoreBehaviorTests
             PlaybackRepeatCount = 0,
             PlaybackInterLoopDelayMilliseconds = -1,
             AutoClickButton = (MouseButtonKind)99,
-            AutoClickIntervalMilliseconds = 1,
+            AutoClickIntervalMilliseconds = -1,
             AutoClickRepeatMode = (RepeatMode)99,
             AutoClickRepeatCount = 0,
             AutoClickPositionMode = (ClickPositionMode)99,
@@ -193,6 +193,19 @@ public sealed class CoreBehaviorTests
         Assert.Equal(HotkeyDefaults.RecordVirtualKey, preferences.RecordHotkeyVirtualKey);
         Assert.Equal(HotkeyDefaults.PlayVirtualKey, preferences.PlayHotkeyVirtualKey);
         Assert.Equal(HotkeyDefaults.StopVirtualKey, preferences.StopHotkeyVirtualKey);
+    }
+
+    [Fact]
+    public void PreferencesNormalizerPreservesZeroAutoClickInterval()
+    {
+        var preferences = new UserPreferences
+        {
+            AutoClickIntervalMilliseconds = 0
+        };
+
+        UserPreferencesNormalizer.Normalize(preferences);
+
+        Assert.Equal(0, preferences.AutoClickIntervalMilliseconds);
     }
 
     private sealed class FakeCapture : IInputCapture

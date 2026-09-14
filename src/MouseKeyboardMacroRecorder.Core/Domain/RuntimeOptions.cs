@@ -64,7 +64,7 @@ public sealed record AutoClickerOptions(
         if (IntervalMilliseconds < AutomationLimits.MinimumAutoClickIntervalMilliseconds
             || IntervalMilliseconds > AutomationLimits.MaximumAutoClickIntervalMilliseconds)
         {
-            throw new ArgumentOutOfRangeException(nameof(IntervalMilliseconds), $"Interval must be between {AutomationLimits.MinimumAutoClickIntervalMilliseconds} and {AutomationLimits.MaximumAutoClickIntervalMilliseconds} milliseconds.");
+            throw new ArgumentOutOfRangeException(nameof(IntervalMilliseconds), $"Click interval must be between {AutomationLimits.MinimumAutoClickIntervalMilliseconds} ms and 24 hours.");
         }
 
         if (RepeatMode == RepeatMode.FixedCount && (RepeatCount <= 0 || RepeatCount > AutomationLimits.MaximumAutoClickRepeatCount))

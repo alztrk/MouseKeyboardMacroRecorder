@@ -640,6 +640,22 @@
                                              Style="{StaticResource InputStyle}"
                                              PreviewTextInput="NumericTextBox_PreviewTextInput"
                                              TextChanged="AutoOption_Changed" />
+                                    <StackPanel x:Name="AutoIntervalErrorPanel"
+                                                Orientation="Horizontal"
+                                                Visibility="Collapsed"
+                                                Margin="0,6,0,0">
+                                        <materialIcons:MaterialIcon Kind="AlertCircleOutline"
+                                                                    Width="13"
+                                                                    Height="13"
+                                                                    Foreground="{DynamicResource ErrorBrush}"
+                                                                    VerticalAlignment="Top"
+                                                                    Margin="0,1,5,0" />
+                                        <TextBlock x:Name="AutoIntervalErrorText"
+                                                   Foreground="{DynamicResource ErrorBrush}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   MaxWidth="210" />
+                                    </StackPanel>
                                     <TextBlock Text="Repeat"
                                                Style="{StaticResource FieldLabelTextStyle}"
                                                Margin="0,16,0,8" />

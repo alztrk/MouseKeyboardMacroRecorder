@@ -4,6 +4,8 @@ using System.Windows.Input;
 using MouseKeyboardMacroRecorder.Core.Application;
 using MouseKeyboardMacroRecorder.Core.Domain;
 using MouseKeyboardMacroRecorder.Infrastructure.Windows;
+using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
+using WpfTextBox = System.Windows.Controls.TextBox;
 
 namespace MouseKeyboardMacroRecorder;
 
@@ -41,7 +43,7 @@ public partial class HotkeyDialog : Window
             || !TryReadBinding(PlayHotkeyBox, HotkeyCommand.Play, out var play)
             || !TryReadBinding(StopHotkeyBox, HotkeyCommand.Stop, out var stop))
         {
-            MessageBox.Show(this, "Choose a key for every command.", "Hotkeys", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, "Choose a key for every command.", "Hotkeys", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
@@ -49,7 +51,7 @@ public partial class HotkeyDialog : Window
             || record.VirtualKey == stop.VirtualKey && record.Modifiers == stop.Modifiers
             || play.VirtualKey == stop.VirtualKey && play.Modifiers == stop.Modifiers)
         {
-            MessageBox.Show(this, "Each command needs a different key.", "Hotkeys", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, "Each command needs a different key.", "Hotkeys", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
@@ -80,15 +82,15 @@ public partial class HotkeyDialog : Window
         }
     }
 
-    private static void SetBinding(TextBox textBox, HotkeyBinding binding)
+    private static void SetBinding(WpfTextBox textBox, HotkeyBinding binding)
     {
         textBox.Tag = binding;
         textBox.Text = HotkeyFormatting.Describe(binding);
     }
 
-    private void HotkeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void HotkeyBox_PreviewKeyDown(object sender, WpfKeyEventArgs e)
     {
-        if (sender is not TextBox textBox)
+        if (sender is not WpfTextBox textBox)
         {
             return;
         }
@@ -118,7 +120,7 @@ public partial class HotkeyDialog : Window
         e.Handled = true;
     }
 
-    private static bool TryReadBinding(TextBox textBox, HotkeyCommand command, out HotkeyBinding binding)
+    private static bool TryReadBinding(WpfTextBox textBox, HotkeyCommand command, out HotkeyBinding binding)
     {
         if (textBox.Tag is HotkeyBinding stored && stored.Command == command)
         {

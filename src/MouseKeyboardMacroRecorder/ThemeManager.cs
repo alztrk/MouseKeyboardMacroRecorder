@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using MouseKeyboardMacroRecorder.Core.Application;
+using Color = System.Windows.Media.Color;
+using WpfApplication = System.Windows.Application;
 
 namespace MouseKeyboardMacroRecorder;
 
@@ -72,7 +74,7 @@ public static class ThemeManager
             SetBrush("ListRowBrush", Color.FromRgb(29, 36, 44));
             SetBrush("ListRowHoverBrush", Color.FromRgb(38, 47, 57));
             SetBrush("ListRowSelectedBrush", Color.FromRgb(66, 42, 31));
-            Application.Current.Resources["PopupShadowColor"] = Color.FromRgb(0, 0, 0);
+            WpfApplication.Current.Resources["PopupShadowColor"] = Color.FromRgb(0, 0, 0);
             return;
         }
 
@@ -109,12 +111,12 @@ public static class ThemeManager
         SetBrush("ListRowBrush", Color.FromRgb(255, 255, 255));
         SetBrush("ListRowHoverBrush", Color.FromRgb(255, 248, 244));
         SetBrush("ListRowSelectedBrush", Color.FromRgb(255, 240, 231));
-        Application.Current.Resources["PopupShadowColor"] = Color.FromRgb(25, 33, 43);
+        WpfApplication.Current.Resources["PopupShadowColor"] = Color.FromRgb(25, 33, 43);
     }
 
     private static void SetBrush(string key, Color color)
     {
-        Application.Current.Resources[key] = new SolidColorBrush(color);
+        WpfApplication.Current.Resources[key] = new SolidColorBrush(color);
     }
 
     private static bool ReadSavedTheme()

@@ -11,7 +11,7 @@ public static class AutomationLimits
     public const int MaximumActionDelayMilliseconds = 24 * 60 * 60 * 1000;
     public const double MaximumPlaybackSpeed = 100;
     public const int MaximumPlaybackRepeatCount = 100_000;
-    public const int MinimumAutoClickIntervalMilliseconds = 10;
+    public const int MinimumAutoClickIntervalMilliseconds = 0;
     public const int MaximumAutoClickIntervalMilliseconds = 24 * 60 * 60 * 1000;
     public const int MaximumAutoClickRepeatCount = 1_000_000;
 }
