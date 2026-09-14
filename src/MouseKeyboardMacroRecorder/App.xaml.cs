@@ -1,4 +1,5 @@
 using MouseKeyboardMacroRecorder.Core.Application;
+using System.IO;
 
 namespace MouseKeyboardMacroRecorder;
 
@@ -15,9 +16,23 @@ public partial class App : System.Windows.Application
         DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
-            System.Diagnostics.Debug.WriteLine(args.Exception);
+            var details = args.Exception.ToString();
+            System.Diagnostics.Debug.WriteLine(details);
+            try
+            {
+                var directory = ProductInfo.GetLocalDataDirectory();
+                Directory.CreateDirectory(directory);
+                File.AppendAllText(
+                    Path.Combine(directory, "errors.log"),
+                    $"[{DateTime.Now:O}] UI dispatcher exception{Environment.NewLine}{details}{Environment.NewLine}{Environment.NewLine}");
+            }
+            catch (Exception loggingException)
+            {
+                System.Diagnostics.Debug.WriteLine(loggingException);
+            }
+
             System.Windows.MessageBox.Show(
-                "The operation could not be completed. The application is still running.",
+                $"The operation could not be completed.{Environment.NewLine}{Environment.NewLine}{args.Exception.Message}",
                 ProductInfo.DisplayName,
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
