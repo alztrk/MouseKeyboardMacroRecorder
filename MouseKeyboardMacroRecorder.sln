@@ -1,0 +1,34 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MouseKeyboardMacroRecorder", "src\MouseKeyboardMacroRecorder\MouseKeyboardMacroRecorder.csproj", "{C4EF6D2C-BA0A-438E-B8C7-AC8D3FA09C54}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MouseKeyboardMacroRecorder.Core", "src\MouseKeyboardMacroRecorder.Core\MouseKeyboardMacroRecorder.Core.csproj", "{1B4FD8E8-3B60-4F5D-9A7A-8B5D9BCB7A01}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MouseKeyboardMacroRecorder.Core.Tests", "tests\MouseKeyboardMacroRecorder.Core.Tests\MouseKeyboardMacroRecorder.Core.Tests.csproj", "{E5B7AE8E-ED96-4E4E-8F8E-0C0CB2A9AC19}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C4EF6D2C-BA0A-438E-B8C7-AC8D3FA09C54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4EF6D2C-BA0A-438E-B8C7-AC8D3FA09C54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4EF6D2C-BA0A-438E-B8C7-AC8D3FA09C54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4EF6D2C-BA0A-438E-B8C7-AC8D3FA09C54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B4FD8E8-3B60-4F5D-9A7A-8B5D9BCB7A01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B4FD8E8-3B60-4F5D-9A7A-8B5D9BCB7A01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B4FD8E8-3B60-4F5D-9A7A-8B5D9BCB7A01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B4FD8E8-3B60-4F5D-9A7A-8B5D9BCB7A01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5B7AE8E-ED96-4E4E-8F8E-0C0CB2A9AC19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5B7AE8E-ED96-4E4E-8F8E-0C0CB2A9AC19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5B7AE8E-ED96-4E4E-8F8E-0C0CB2A9AC19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5B7AE8E-ED96-4E4E-8F8E-0C0CB2A9AC19}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
