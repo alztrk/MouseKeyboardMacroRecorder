@@ -101,16 +101,10 @@ public partial class MainWindow : Window, IDisposable
 
     private void LoadWindowIcon()
     {
-        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "favicon.ico");
-        if (!File.Exists(iconPath))
-        {
-            return;
-        }
-
         var icon = new System.Windows.Media.Imaging.BitmapImage();
         icon.BeginInit();
         icon.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-        icon.UriSource = new Uri(iconPath, UriKind.Absolute);
+        icon.UriSource = new Uri("pack://application:,,,/Assets/favicon.ico", UriKind.Absolute);
         icon.EndInit();
         icon.Freeze();
         Icon = icon;

@@ -5,6 +5,8 @@ TestResults/
 dist/
 build/
 outputs/
+release/
+release-manifest-*.json
 work/
 *.log
 

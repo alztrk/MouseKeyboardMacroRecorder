@@ -17,11 +17,11 @@ $repositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $projectPath = Join-Path $repositoryRoot "src\MouseKeyboardMacroRecorder\MouseKeyboardMacroRecorder.csproj"
 $installerScriptPath = Join-Path $repositoryRoot "packaging\MouseKeyboardMacroRecorder.iss"
 $resolvedOutputRoot = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
-    Join-Path $repositoryRoot "outputs"
+    Join-Path $repositoryRoot "release"
 } else {
     [System.IO.Path]::GetFullPath($OutputRoot)
 }
-$portableOutputPath = Join-Path $resolvedOutputRoot "portable\$RuntimeIdentifier"
+$portableOutputPath = $resolvedOutputRoot
 $installerOutputPath = Join-Path $resolvedOutputRoot "installer"
 
 function Invoke-Dotnet {
@@ -74,8 +74,10 @@ function Publish-Portable {
         "--runtime", $RuntimeIdentifier,
         "--self-contained", "true",
         "--output", $portableOutputPath,
-        "-p:PublishSingleFile=false",
+        "-p:PublishSingleFile=true",
+        "-p:IncludeNativeLibrariesForSelfExtract=true",
         "-p:PublishTrimmed=false",
+        "-p:GenerateDocumentationFile=false",
         "-p:DebugType=None",
         "-p:DebugSymbols=false"
     )
@@ -185,12 +187,12 @@ $manifest = [ordered]@{
     version = $projectVersion
     runtime = $RuntimeIdentifier
     configuration = $Configuration
-    portable_executable = "portable/$RuntimeIdentifier/MouseKeyboardMacroRecorder.exe"
+    portable_executable = "MouseKeyboardMacroRecorder.exe"
     portable_sha256 = $portableHash.Hash
     installer = $manifestInstallerPath
     installer_sha256 = if ($null -eq $installerHash) { $null } else { $installerHash.Hash }
 }
-$manifestPath = Join-Path $resolvedOutputRoot "release-manifest-$RuntimeIdentifier.json"
+$manifestPath = Join-Path $repositoryRoot "release-manifest-$RuntimeIdentifier.json"
 $manifest | ConvertTo-Json | Set-Content -LiteralPath $manifestPath -Encoding utf8
 
 [pscustomobject]@{

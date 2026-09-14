@@ -8,7 +8,7 @@ The project has one source of truth for runtime packaging: `scripts/publish.ps1`
 pwsh ./scripts/publish.ps1 -Target Portable -RuntimeIdentifier win-x64
 ```
 
-The result is a self-contained folder at `outputs/portable/win-x64`. The folder must be distributed as a folder because the portable publish intentionally keeps native runtime files and application assets beside the executable. It does not write an installer registry entry or require administrator privileges.
+The result is a self-contained release folder at `release`. The single-file executable contains the .NET runtime and application icon, so no `Assets` folder or runtime DLLs are required beside it. It does not write an installer registry entry or require administrator privileges.
 
 The script accepts `win-arm64` for a self-contained ARM64 build:
 
