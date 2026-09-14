@@ -6,13 +6,25 @@ namespace MouseKeyboardMacroRecorder;
 /// <summary>
 /// WPF application entry point.
 /// </summary>
-public partial class App : System.Windows.Application
+public partial class App : System.Windows.Application, IDisposable
 {
+    private Mutex? _singleInstanceMutex;
+
     /// <summary>
     /// Loads persisted application preferences before the main window is created.
     /// </summary>
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
+        _singleInstanceMutex = new Mutex(
+            initiallyOwned: true,
+            name: $"Local\\{ProductInfo.Identifier}",
+            createdNew: out var createdNew);
+        if (!createdNew)
+        {
+            Shutdown();
+            return;
+        }
+
         DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
@@ -40,5 +52,24 @@ public partial class App : System.Windows.Application
 
         ThemeManager.LoadSavedTheme();
         base.OnStartup(e);
+    }
+
+    protected override void OnExit(System.Windows.ExitEventArgs e)
+    {
+        Dispose();
+        base.OnExit(e);
+    }
+
+    public void Dispose()
+    {
+        var mutex = Interlocked.Exchange(ref _singleInstanceMutex, null);
+        if (mutex is null)
+        {
+            return;
+        }
+
+        mutex.ReleaseMutex();
+        mutex.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
