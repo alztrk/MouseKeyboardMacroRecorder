@@ -470,29 +470,25 @@ public partial class MainWindow : Window, IDisposable
 
     private void StopRecordingAndStore()
     {
-        MacroDocument document;
+        MacroDocument? document = null;
         try
         {
             document = _coordinator.StopRecording("Recorded macro");
-        }
-        catch (Exception exception)
-        {
-            ShowError(exception);
-            return;
-        }
 
-        var name = $"{ProductInfo.RecordedMacroBaseName} - {DateTime.Now:yyyy-MM-dd HH-mm-ss}";
-        var path = GetUniqueAutoSavePath(name);
-        document = document with { Name = name };
-        try
-        {
+            var name = $"{ProductInfo.RecordedMacroBaseName} - {DateTime.Now:yyyy-MM-dd HH-mm-ss}";
+            var path = GetUniqueAutoSavePath(name);
+            document = document with { Name = name };
             MacroFileStore.Save(path, document);
             AddOrUpdateMacro(document, path, saved: true);
             SetStatus("Macro saved automatically.");
         }
         catch (Exception exception)
         {
-            AddOrUpdateMacro(document, null, saved: false);
+            if (document is not null)
+            {
+                AddOrUpdateMacro(document, null, saved: false);
+            }
+
             ShowError(exception);
         }
     }
@@ -504,25 +500,25 @@ public partial class MainWindow : Window, IDisposable
 
     private async Task PlayAsync()
     {
-        if (_coordinator.State == AutomationState.Playing)
-        {
-            _coordinator.PausePlayback();
-            return;
-        }
-
-        if (_coordinator.State == AutomationState.Pausing)
-        {
-            _coordinator.ResumePlayback();
-            return;
-        }
-
-        if (_coordinator.State != AutomationState.Idle || MacroItemsList.SelectedItem is not MacroListItem selected)
-        {
-            return;
-        }
-
         try
         {
+            if (_coordinator.State == AutomationState.Playing)
+            {
+                _coordinator.PausePlayback();
+                return;
+            }
+
+            if (_coordinator.State == AutomationState.Pausing)
+            {
+                _coordinator.ResumePlayback();
+                return;
+            }
+
+            if (_coordinator.State != AutomationState.Idle || MacroItemsList.SelectedItem is not MacroListItem selected)
+            {
+                return;
+            }
+
             var options = BuildPlaybackOptions();
             await _coordinator.PlayAsync(selected.Document, options);
             SetStatus("Ready");
@@ -874,13 +870,15 @@ public partial class MainWindow : Window, IDisposable
 
     private async Task ExecuteHotkeyAsync(HotkeyCommand command)
     {
-        if (!await _hotkeyExecutionGate.WaitAsync(0))
-        {
-            return;
-        }
-
+        var acquired = false;
         try
         {
+            acquired = await _hotkeyExecutionGate.WaitAsync(0);
+            if (!acquired)
+            {
+                return;
+            }
+
             switch (command)
             {
                 case HotkeyCommand.Record:
@@ -908,7 +906,10 @@ public partial class MainWindow : Window, IDisposable
         }
         finally
         {
-            _hotkeyExecutionGate.Release();
+            if (acquired)
+            {
+                _hotkeyExecutionGate.Release();
+            }
         }
     }
 
