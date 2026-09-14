@@ -1,49 +1,64 @@
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using HotkeyDefaults = MouseKeyboardMacroRecorder.Core.Domain.HotkeyDefaults;
+using MouseKeyboardMacroRecorder.Core.Application;
+using MouseKeyboardMacroRecorder.Core.Domain;
+using MouseKeyboardMacroRecorder.Infrastructure.Windows;
 
 namespace MouseKeyboardMacroRecorder;
 
 public partial class HotkeyDialog : Window
 {
-    public HotkeyDialog(uint recordVirtualKey, uint playVirtualKey, uint stopVirtualKey)
+    public HotkeyDialog(
+        uint recordVirtualKey,
+        HotkeyModifiers recordModifiers,
+        uint playVirtualKey,
+        HotkeyModifiers playModifiers,
+        uint stopVirtualKey,
+        HotkeyModifiers stopModifiers)
     {
         InitializeComponent();
-        Populate(RecordComboBox, HotkeyDefaults.RecordVirtualKeys);
-        Populate(PlayComboBox, HotkeyDefaults.PlayVirtualKeys);
-        Populate(StopComboBox, HotkeyDefaults.StopVirtualKeys);
-        SelectByTag(RecordComboBox, recordVirtualKey);
-        SelectByTag(PlayComboBox, playVirtualKey);
-        SelectByTag(StopComboBox, stopVirtualKey);
+        SetBinding(RecordHotkeyBox, new HotkeyBinding(HotkeyCommand.Record, recordModifiers, recordVirtualKey));
+        SetBinding(PlayHotkeyBox, new HotkeyBinding(HotkeyCommand.Play, playModifiers, playVirtualKey));
+        SetBinding(StopHotkeyBox, new HotkeyBinding(HotkeyCommand.Stop, stopModifiers, stopVirtualKey));
     }
 
     public uint RecordVirtualKey { get; private set; }
 
+    public HotkeyModifiers RecordModifiers { get; private set; }
+
     public uint PlayVirtualKey { get; private set; }
+
+    public HotkeyModifiers PlayModifiers { get; private set; }
 
     public uint StopVirtualKey { get; private set; }
 
+    public HotkeyModifiers StopModifiers { get; private set; }
+
     private void ApplyButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!TryReadKey(RecordComboBox, out var record)
-            || !TryReadKey(PlayComboBox, out var play)
-            || !TryReadKey(StopComboBox, out var stop))
+        if (!TryReadBinding(RecordHotkeyBox, HotkeyCommand.Record, out var record)
+            || !TryReadBinding(PlayHotkeyBox, HotkeyCommand.Play, out var play)
+            || !TryReadBinding(StopHotkeyBox, HotkeyCommand.Stop, out var stop))
         {
             MessageBox.Show(this, "Choose a key for every command.", "Hotkeys", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
-        if (record == play || record == stop || play == stop)
+        if (record.VirtualKey == play.VirtualKey && record.Modifiers == play.Modifiers
+            || record.VirtualKey == stop.VirtualKey && record.Modifiers == stop.Modifiers
+            || play.VirtualKey == stop.VirtualKey && play.Modifiers == stop.Modifiers)
         {
             MessageBox.Show(this, "Each command needs a different key.", "Hotkeys", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
-        RecordVirtualKey = record;
-        PlayVirtualKey = play;
-        StopVirtualKey = stop;
+        RecordVirtualKey = record.VirtualKey;
+        PlayVirtualKey = play.VirtualKey;
+        StopVirtualKey = stop.VirtualKey;
+        RecordModifiers = record.Modifiers;
+        PlayModifiers = play.Modifiers;
+        StopModifiers = stop.Modifiers;
         DialogResult = true;
     }
 
@@ -59,37 +74,69 @@ public partial class HotkeyDialog : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed)
+        if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
         {
             DragMove();
         }
     }
 
-    private static void SelectByTag(ComboBox comboBox, uint virtualKey)
+    private static void SetBinding(TextBox textBox, HotkeyBinding binding)
     {
-        var tag = virtualKey.ToString(CultureInfo.InvariantCulture);
-        comboBox.SelectedItem = comboBox.Items.OfType<ComboBoxItem>().FirstOrDefault(item => Equals(item.Tag, tag))
-            ?? comboBox.Items.OfType<ComboBoxItem>().FirstOrDefault();
+        textBox.Tag = binding;
+        textBox.Text = HotkeyFormatting.Describe(binding);
     }
 
-    private static void Populate(ComboBox comboBox, IReadOnlyList<uint> virtualKeys)
+    private void HotkeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        foreach (var virtualKey in virtualKeys)
+        if (sender is not TextBox textBox)
         {
-            comboBox.Items.Add(new ComboBoxItem
-            {
-                Content = HotkeyDefaults.GetDisplayName(virtualKey),
-                Tag = virtualKey.ToString(CultureInfo.InvariantCulture)
-            });
+            return;
         }
+
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt
+            or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        var virtualKey = KeyInterop.VirtualKeyFromKey(key);
+        if (virtualKey == 0)
+        {
+            return;
+        }
+
+        var command = textBox.Name switch
+        {
+            nameof(RecordHotkeyBox) => HotkeyCommand.Record,
+            nameof(PlayHotkeyBox) => HotkeyCommand.Play,
+            _ => HotkeyCommand.Stop
+        };
+        var binding = new HotkeyBinding(command, ToHotkeyModifiers(Keyboard.Modifiers), (uint)virtualKey);
+        SetBinding(textBox, binding);
+        e.Handled = true;
     }
 
-    private static bool TryReadKey(ComboBox comboBox, out uint virtualKey)
+    private static bool TryReadBinding(TextBox textBox, HotkeyCommand command, out HotkeyBinding binding)
     {
-        return uint.TryParse(
-            (comboBox.SelectedItem as ComboBoxItem)?.Tag as string,
-            NumberStyles.None,
-            CultureInfo.InvariantCulture,
-            out virtualKey);
+        if (textBox.Tag is HotkeyBinding stored && stored.Command == command)
+        {
+            binding = stored;
+            return true;
+        }
+
+        binding = new HotkeyBinding(command, HotkeyModifiers.None, 0);
+        return false;
+    }
+
+    private static HotkeyModifiers ToHotkeyModifiers(ModifierKeys modifiers)
+    {
+        var result = HotkeyModifiers.None;
+        if (modifiers.HasFlag(ModifierKeys.Control)) result |= HotkeyModifiers.Control;
+        if (modifiers.HasFlag(ModifierKeys.Alt)) result |= HotkeyModifiers.Alt;
+        if (modifiers.HasFlag(ModifierKeys.Shift)) result |= HotkeyModifiers.Shift;
+        if (modifiers.HasFlag(ModifierKeys.Windows)) result |= HotkeyModifiers.Windows;
+        return result;
     }
 }

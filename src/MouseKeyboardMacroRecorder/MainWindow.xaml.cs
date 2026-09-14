@@ -117,7 +117,12 @@ public partial class MainWindow : Window, IDisposable
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         UpdateResponsiveLayout();
-        RegisterGlobalHotkeys();
+        Dispatcher.BeginInvoke(
+            new Action(RegisterGlobalHotkeys),
+            System.Windows.Threading.DispatcherPriority.ContextIdle);
+        Dispatcher.BeginInvoke(
+            new Action(LoadAutoSavedMacros),
+            System.Windows.Threading.DispatcherPriority.Background);
         if (!string.IsNullOrWhiteSpace(_startupWarning))
         {
             SetStatus(_startupWarning, isError: true);
@@ -134,6 +139,39 @@ public partial class MainWindow : Window, IDisposable
     private void RegisterGlobalHotkeys()
     {
         TryRegisterGlobalHotkeys();
+    }
+
+    private void LoadAutoSavedMacros()
+    {
+        var directory = ProductInfo.GetMacroDirectory();
+        if (!Directory.Exists(directory))
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (var path in Directory.EnumerateFiles(directory, "*" + MacroFileStore.FileExtension)
+                         .OrderByDescending(path => File.GetLastWriteTimeUtc(path)))
+            {
+                try
+                {
+                    AddOrUpdateMacro(MacroFileStore.Load(path), path, saved: true);
+                }
+                catch (MacroPersistenceException exception)
+                {
+                    _startupWarning = "One auto-saved macro could not be loaded: " + exception.Message;
+                }
+            }
+        }
+        catch (IOException exception)
+        {
+            _startupWarning = "Auto-saved macros could not be loaded: " + exception.Message;
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            _startupWarning = "Auto-saved macros could not be loaded because access was denied: " + exception.Message;
+        }
     }
 
     private async void Window_Closing(object? sender, CancelEventArgs e)
@@ -296,8 +334,11 @@ public partial class MainWindow : Window, IDisposable
 
         var dialog = new HotkeyDialog(
             _preferences.RecordHotkeyVirtualKey,
+            _preferences.RecordHotkeyModifiers,
             _preferences.PlayHotkeyVirtualKey,
-            _preferences.StopHotkeyVirtualKey)
+            _preferences.PlayHotkeyModifiers,
+            _preferences.StopHotkeyVirtualKey,
+            _preferences.StopHotkeyModifiers)
         {
             Owner = this
         };
@@ -307,11 +348,17 @@ public partial class MainWindow : Window, IDisposable
         }
 
         var previousRecord = _preferences.RecordHotkeyVirtualKey;
+        var previousRecordModifiers = _preferences.RecordHotkeyModifiers;
         var previousPlay = _preferences.PlayHotkeyVirtualKey;
+        var previousPlayModifiers = _preferences.PlayHotkeyModifiers;
         var previousStop = _preferences.StopHotkeyVirtualKey;
+        var previousStopModifiers = _preferences.StopHotkeyModifiers;
         _preferences.RecordHotkeyVirtualKey = dialog.RecordVirtualKey;
+        _preferences.RecordHotkeyModifiers = dialog.RecordModifiers;
         _preferences.PlayHotkeyVirtualKey = dialog.PlayVirtualKey;
+        _preferences.PlayHotkeyModifiers = dialog.PlayModifiers;
         _preferences.StopHotkeyVirtualKey = dialog.StopVirtualKey;
+        _preferences.StopHotkeyModifiers = dialog.StopModifiers;
         if (TryRegisterGlobalHotkeys())
         {
             PersistPreferences();
@@ -321,8 +368,11 @@ public partial class MainWindow : Window, IDisposable
         }
 
         _preferences.RecordHotkeyVirtualKey = previousRecord;
+        _preferences.RecordHotkeyModifiers = previousRecordModifiers;
         _preferences.PlayHotkeyVirtualKey = previousPlay;
+        _preferences.PlayHotkeyModifiers = previousPlayModifiers;
         _preferences.StopHotkeyVirtualKey = previousStop;
+        _preferences.StopHotkeyModifiers = previousStopModifiers;
         TryRegisterGlobalHotkeys();
         UpdateShortcutHint();
     }
@@ -429,31 +479,14 @@ public partial class MainWindow : Window, IDisposable
             return;
         }
 
-        var dialog = new Microsoft.Win32.SaveFileDialog
-        {
-            AddExtension = true,
-            DefaultExt = MacroFileStore.FileExtension.TrimStart('.'),
-            Filter = ProductInfo.MacroFileDialogFilter,
-            FileName = ProductInfo.RecordedMacroBaseName + MacroFileStore.FileExtension,
-            OverwritePrompt = true,
-            Title = "Save macro"
-        };
-
-        if (dialog.ShowDialog(this) != true)
-        {
-            AddOrUpdateMacro(document, null, saved: false);
-            SetStatus("Recording kept in this session. Export it to save a file.");
-            return;
-        }
-
-        var path = EnsureMacroExtension(dialog.FileName);
-        var name = GetMacroNameFromPath(path);
+        var name = $"{ProductInfo.RecordedMacroBaseName} - {DateTime.Now:yyyy-MM-dd HH-mm-ss}";
+        var path = GetUniqueAutoSavePath(name);
         document = document with { Name = name };
         try
         {
             MacroFileStore.Save(path, document);
             AddOrUpdateMacro(document, path, saved: true);
-            SetStatus("Macro saved.");
+            SetStatus("Macro saved automatically.");
         }
         catch (Exception exception)
         {
@@ -803,7 +836,14 @@ public partial class MainWindow : Window, IDisposable
             switch (e.Command)
             {
                 case HotkeyCommand.Record:
-                    RecordButton_Click(this, new RoutedEventArgs());
+                    if (string.Equals(_preferences.LastSurface, WorkspaceSurfaceNames.AutoClicker, StringComparison.OrdinalIgnoreCase))
+                    {
+                        AutoClickerStartButton_Click(this, new RoutedEventArgs());
+                    }
+                    else
+                    {
+                        RecordButton_Click(this, new RoutedEventArgs());
+                    }
                     break;
                 case HotkeyCommand.Play:
                     PlayButton_Click(this, new RoutedEventArgs());
@@ -855,7 +895,7 @@ public partial class MainWindow : Window, IDisposable
         {
             RecordButtonText.Text = "Record";
             RecordButtonIcon.Kind = MaterialIconKind.RecordCircleOutline;
-            RecordButton.ToolTip = $"Start recording ({HotkeyDefaults.GetDisplayName(_preferences.RecordHotkeyVirtualKey)})";
+            RecordButton.ToolTip = $"Start recording ({DescribeRecordHotkey()})";
         }
 
         if (state == AutomationState.Playing)
@@ -1165,9 +1205,9 @@ public partial class MainWindow : Window, IDisposable
             var registration = candidate.Register(
                 new[]
                 {
-                    new HotkeyBinding(HotkeyCommand.Record, HotkeyModifiers.None, _preferences.RecordHotkeyVirtualKey),
-                    new HotkeyBinding(HotkeyCommand.Play, HotkeyModifiers.None, _preferences.PlayHotkeyVirtualKey),
-                    new HotkeyBinding(HotkeyCommand.Stop, HotkeyModifiers.None, _preferences.StopHotkeyVirtualKey)
+                    new HotkeyBinding(HotkeyCommand.Record, _preferences.RecordHotkeyModifiers, _preferences.RecordHotkeyVirtualKey),
+                    new HotkeyBinding(HotkeyCommand.Play, _preferences.PlayHotkeyModifiers, _preferences.PlayHotkeyVirtualKey),
+                    new HotkeyBinding(HotkeyCommand.Stop, _preferences.StopHotkeyModifiers, _preferences.StopHotkeyVirtualKey)
                 });
             _hotkeyRegistration = registration;
             _hotkeys = candidate;
@@ -1186,9 +1226,9 @@ public partial class MainWindow : Window, IDisposable
 
     private void UpdateShortcutHint()
     {
-        var recordHotkey = HotkeyDefaults.GetDisplayName(_preferences.RecordHotkeyVirtualKey);
-        var playHotkey = HotkeyDefaults.GetDisplayName(_preferences.PlayHotkeyVirtualKey);
-        var stopHotkey = HotkeyDefaults.GetDisplayName(_preferences.StopHotkeyVirtualKey);
+        var recordHotkey = HotkeyFormatting.Describe(new HotkeyBinding(HotkeyCommand.Record, _preferences.RecordHotkeyModifiers, _preferences.RecordHotkeyVirtualKey));
+        var playHotkey = HotkeyFormatting.Describe(new HotkeyBinding(HotkeyCommand.Play, _preferences.PlayHotkeyModifiers, _preferences.PlayHotkeyVirtualKey));
+        var stopHotkey = HotkeyFormatting.Describe(new HotkeyBinding(HotkeyCommand.Stop, _preferences.StopHotkeyModifiers, _preferences.StopHotkeyVirtualKey));
         ShortcutHint.Text = $"{recordHotkey} record  ·  {playHotkey} play  ·  {stopHotkey} stop";
         ShortcutHint.Foreground = (Brush)FindResource("SubtleInkBrush");
         ShortcutHint.ToolTip = null;
@@ -1206,6 +1246,14 @@ public partial class MainWindow : Window, IDisposable
             RepeatMode.FixedCount when count is 2 or 5 or 10 or 100 => $"count:{count}",
             _ => "once"
         };
+    }
+
+    private string DescribeRecordHotkey()
+    {
+        return HotkeyFormatting.Describe(new HotkeyBinding(
+            HotkeyCommand.Record,
+            _preferences.RecordHotkeyModifiers,
+            _preferences.RecordHotkeyVirtualKey));
     }
 
     private static void SelectByTag(ComboBox comboBox, string tag)
@@ -1245,6 +1293,27 @@ public partial class MainWindow : Window, IDisposable
         return path.EndsWith(MacroFileStore.FileExtension, StringComparison.OrdinalIgnoreCase)
             ? path
             : path + MacroFileStore.FileExtension;
+    }
+
+    private static string GetUniqueAutoSavePath(string name)
+    {
+        var directory = ProductInfo.GetMacroDirectory();
+        var basePath = Path.Combine(directory, name + MacroFileStore.FileExtension);
+        if (!File.Exists(basePath))
+        {
+            return basePath;
+        }
+
+        for (var index = 2; index <= 1000; index++)
+        {
+            var path = Path.Combine(directory, $"{name} ({index}){MacroFileStore.FileExtension}");
+            if (!File.Exists(path))
+            {
+                return path;
+            }
+        }
+
+        throw new IOException("A unique automatic macro file name could not be created.");
     }
 
     private static string GetMacroNameFromPath(string path)

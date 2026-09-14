@@ -167,6 +167,15 @@ internal static class WindowsNativeMethods
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool PeekMessage(
+        out Message message,
+        IntPtr windowHandle,
+        uint minimumMessage,
+        uint maximumMessage,
+        uint removeMessage);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool TranslateMessage(ref Message message);
 
     [DllImport("user32.dll")]

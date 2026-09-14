@@ -11,6 +11,7 @@ public static class ProductInfo
     public const string DisplayName = "Mouse Keyboard Macro Recorder";
     public const string ThemeSettingsFileName = "settings.json";
     public const string UserPreferencesFileName = "preferences.json";
+    public const string MacroDirectoryName = "Macros";
     public const string MacroFileDialogFilter = "Macro files (*.macro.json)|*.macro.json";
     public const string RecordedMacroBaseName = "Recorded macro";
 
@@ -34,5 +35,10 @@ public static class ProductInfo
         }
 
         return Path.Combine(GetLocalDataDirectory(), fileName);
+    }
+
+    public static string GetMacroDirectory()
+    {
+        return Path.Combine(GetLocalDataDirectory(), MacroDirectoryName);
     }
 }

@@ -24,9 +24,15 @@ public sealed class UserPreferences
 
     public uint RecordHotkeyVirtualKey { get; set; } = HotkeyDefaults.RecordVirtualKey;
 
+    public HotkeyModifiers RecordHotkeyModifiers { get; set; } = HotkeyModifiers.None;
+
     public uint PlayHotkeyVirtualKey { get; set; } = HotkeyDefaults.PlayVirtualKey;
 
+    public HotkeyModifiers PlayHotkeyModifiers { get; set; } = HotkeyModifiers.None;
+
     public uint StopHotkeyVirtualKey { get; set; } = HotkeyDefaults.StopVirtualKey;
+
+    public HotkeyModifiers StopHotkeyModifiers { get; set; } = HotkeyModifiers.None;
 
     public MouseButtonKind AutoClickButton { get; set; } = AutomationDefaults.AutoClickButton;
 
@@ -107,28 +113,49 @@ public static class UserPreferencesNormalizer
             preferences.LastSurface = AutomationDefaults.LastSurface;
         }
 
-        if (!HotkeyDefaults.IsSupported(preferences.RecordHotkeyVirtualKey))
+        if (!HotkeyDefaults.IsSupported(preferences.RecordHotkeyVirtualKey)
+            || !HotkeyDefaults.IsSupportedModifiers(preferences.RecordHotkeyModifiers))
         {
             preferences.RecordHotkeyVirtualKey = HotkeyDefaults.RecordVirtualKey;
+            preferences.RecordHotkeyModifiers = HotkeyModifiers.None;
         }
 
-        if (!HotkeyDefaults.IsSupported(preferences.PlayHotkeyVirtualKey))
+        if (!HotkeyDefaults.IsSupported(preferences.PlayHotkeyVirtualKey)
+            || !HotkeyDefaults.IsSupportedModifiers(preferences.PlayHotkeyModifiers))
         {
             preferences.PlayHotkeyVirtualKey = HotkeyDefaults.PlayVirtualKey;
+            preferences.PlayHotkeyModifiers = HotkeyModifiers.None;
         }
 
-        if (!HotkeyDefaults.IsSupported(preferences.StopHotkeyVirtualKey))
+        if (!HotkeyDefaults.IsSupported(preferences.StopHotkeyVirtualKey)
+            || !HotkeyDefaults.IsSupportedModifiers(preferences.StopHotkeyModifiers))
         {
             preferences.StopHotkeyVirtualKey = HotkeyDefaults.StopVirtualKey;
+            preferences.StopHotkeyModifiers = HotkeyModifiers.None;
         }
 
-        if (preferences.RecordHotkeyVirtualKey == preferences.PlayHotkeyVirtualKey
-            || preferences.RecordHotkeyVirtualKey == preferences.StopHotkeyVirtualKey
-            || preferences.PlayHotkeyVirtualKey == preferences.StopHotkeyVirtualKey)
+        var recordBinding = new HotkeyBinding(
+            HotkeyCommand.Record,
+            preferences.RecordHotkeyModifiers,
+            preferences.RecordHotkeyVirtualKey);
+        var playBinding = new HotkeyBinding(
+            HotkeyCommand.Play,
+            preferences.PlayHotkeyModifiers,
+            preferences.PlayHotkeyVirtualKey);
+        var stopBinding = new HotkeyBinding(
+            HotkeyCommand.Stop,
+            preferences.StopHotkeyModifiers,
+            preferences.StopHotkeyVirtualKey);
+        if (recordBinding.Modifiers == playBinding.Modifiers && recordBinding.VirtualKey == playBinding.VirtualKey
+            || recordBinding.Modifiers == stopBinding.Modifiers && recordBinding.VirtualKey == stopBinding.VirtualKey
+            || playBinding.Modifiers == stopBinding.Modifiers && playBinding.VirtualKey == stopBinding.VirtualKey)
         {
             preferences.RecordHotkeyVirtualKey = HotkeyDefaults.RecordVirtualKey;
+            preferences.RecordHotkeyModifiers = HotkeyModifiers.None;
             preferences.PlayHotkeyVirtualKey = HotkeyDefaults.PlayVirtualKey;
+            preferences.PlayHotkeyModifiers = HotkeyModifiers.None;
             preferences.StopHotkeyVirtualKey = HotkeyDefaults.StopVirtualKey;
+            preferences.StopHotkeyModifiers = HotkeyModifiers.None;
         }
     }
 }

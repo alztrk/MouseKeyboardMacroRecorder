@@ -203,6 +203,13 @@ public sealed class WindowsGlobalHotkeyService : IGlobalHotkeyService
             _threadId = WindowsNativeMethods.GetCurrentThreadId();
             try
             {
+                WindowsNativeMethods.PeekMessage(
+                    out _,
+                    IntPtr.Zero,
+                    0,
+                    0,
+                    0);
+
                 for (var index = 0; index < _bindings.Count; index++)
                 {
                     var binding = _bindings[index];

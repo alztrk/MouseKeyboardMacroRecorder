@@ -1,3 +1,5 @@
+using MouseKeyboardMacroRecorder.Core.Application;
+
 namespace MouseKeyboardMacroRecorder.Core.Domain;
 
 /// <summary>
@@ -34,7 +36,7 @@ public static class AutomationDefaults
 }
 
 /// <summary>
-/// Supported no-modifier global hotkeys and their defaults.
+/// Default global hotkeys and validation helpers.
 /// </summary>
 public static class HotkeyDefaults
 {
@@ -68,9 +70,12 @@ public static class HotkeyDefaults
 
     public static bool IsSupported(uint virtualKey)
     {
-        return RecordVirtualKeys.Contains(virtualKey)
-            || PlayVirtualKeys.Contains(virtualKey)
-            || StopVirtualKeys.Contains(virtualKey);
+        return virtualKey is >= 1 and <= 0xFE;
+    }
+
+    public static bool IsSupportedModifiers(HotkeyModifiers modifiers)
+    {
+        return ((uint)modifiers & ~0x000Fu) == 0;
     }
 
     public static string GetDisplayName(uint virtualKey)

@@ -20,6 +20,10 @@
                             UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
+    <Border Background="{DynamicResource CanvasBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource ControlRadius}">
     <Grid Background="{DynamicResource CanvasBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="46" />
@@ -78,9 +82,11 @@
                 <TextBlock Text="Record"
                            Style="{StaticResource FieldLabelTextStyle}"
                            VerticalAlignment="Center" />
-                <ComboBox x:Name="RecordComboBox"
-                          Grid.Column="1"
-                          Style="{StaticResource SelectStyle}" />
+                <TextBox x:Name="RecordHotkeyBox"
+                         Grid.Column="1"
+                         Style="{StaticResource TextInputStyle}"
+                         PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                         ToolTip="Press a key or key combination" />
             </Grid>
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
@@ -90,9 +96,11 @@
                 <TextBlock Text="Play"
                            Style="{StaticResource FieldLabelTextStyle}"
                            VerticalAlignment="Center" />
-                <ComboBox x:Name="PlayComboBox"
-                          Grid.Column="1"
-                          Style="{StaticResource SelectStyle}" />
+                <TextBox x:Name="PlayHotkeyBox"
+                         Grid.Column="1"
+                         Style="{StaticResource TextInputStyle}"
+                         PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                         ToolTip="Press a key or key combination" />
             </Grid>
             <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>
@@ -102,9 +110,11 @@
                 <TextBlock Text="Stop"
                            Style="{StaticResource FieldLabelTextStyle}"
                            VerticalAlignment="Center" />
-                <ComboBox x:Name="StopComboBox"
-                          Grid.Column="1"
-                          Style="{StaticResource SelectStyle}" />
+                <TextBox x:Name="StopHotkeyBox"
+                         Grid.Column="1"
+                         Style="{StaticResource TextInputStyle}"
+                         PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                         ToolTip="Press a key or key combination" />
             </Grid>
         </Grid>
 
@@ -125,4 +135,5 @@
             </Button>
         </StackPanel>
     </Grid>
+    </Border>
 </Window>
