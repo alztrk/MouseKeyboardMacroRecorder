@@ -831,28 +831,52 @@ public partial class MainWindow : Window, IDisposable
 
     private void Hotkeys_Pressed(object? sender, HotkeyPressedEventArgs e)
     {
-        Dispatcher.BeginInvoke(new Action(() =>
+        if (_isClosing || _servicesDisposed || Dispatcher.HasShutdownStarted)
         {
-            switch (e.Command)
+            return;
+        }
+
+        try
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
             {
-                case HotkeyCommand.Record:
-                    if (string.Equals(_preferences.LastSurface, WorkspaceSurfaceNames.AutoClicker, StringComparison.OrdinalIgnoreCase))
+                if (_isClosing || _servicesDisposed)
+                {
+                    return;
+                }
+
+                try
+                {
+                    switch (e.Command)
                     {
-                        AutoClickerStartButton_Click(this, new RoutedEventArgs());
+                        case HotkeyCommand.Record:
+                            if (string.Equals(_preferences.LastSurface, WorkspaceSurfaceNames.AutoClicker, StringComparison.OrdinalIgnoreCase))
+                            {
+                                AutoClickerStartButton_Click(this, new RoutedEventArgs());
+                            }
+                            else
+                            {
+                                RecordButton_Click(this, new RoutedEventArgs());
+                            }
+                            break;
+                        case HotkeyCommand.Play:
+                            PlayButton_Click(this, new RoutedEventArgs());
+                            break;
+                        case HotkeyCommand.Stop:
+                            StopButton_Click(this, new RoutedEventArgs());
+                            break;
                     }
-                    else
-                    {
-                        RecordButton_Click(this, new RoutedEventArgs());
-                    }
-                    break;
-                case HotkeyCommand.Play:
-                    PlayButton_Click(this, new RoutedEventArgs());
-                    break;
-                case HotkeyCommand.Stop:
-                    StopButton_Click(this, new RoutedEventArgs());
-                    break;
-            }
-        }));
+                }
+                catch (Exception exception)
+                {
+                    ShowError(exception);
+                }
+            }));
+        }
+        catch (InvalidOperationException)
+        {
+            // The dispatcher may be shutting down while the hotkey thread is still unwinding.
+        }
     }
 
     private void UpdateUiForState(AutomationState state)
