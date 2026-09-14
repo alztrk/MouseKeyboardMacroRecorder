@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using MouseKeyboardMacroRecorder.Core.Application;
 
@@ -82,7 +83,15 @@ public sealed class WindowsGlobalHotkeyService : IGlobalHotkeyService
 
     private void RaisePressed(HotkeyCommand command)
     {
-        Pressed?.Invoke(this, new HotkeyPressedEventArgs(command));
+        try
+        {
+            Pressed?.Invoke(this, new HotkeyPressedEventArgs(command));
+        }
+        catch (Exception exception)
+        {
+            // A subscriber must not be able to terminate the native hotkey message loop.
+            Debug.WriteLine(exception);
+        }
     }
 
     private static void ValidateBindings(IEnumerable<HotkeyBinding> bindings)

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -32,6 +33,7 @@ public partial class MainWindow : Window, IDisposable
     private readonly AutomationCoordinator _coordinator;
     private UserPreferences _preferences;
     private IDisposable? _hotkeyRegistration;
+    private readonly SemaphoreSlim _hotkeyExecutionGate = new(1, 1);
     private string? _startupWarning;
     private string? _statusMessage;
     private bool _captureErrorShown;
@@ -495,7 +497,12 @@ public partial class MainWindow : Window, IDisposable
         }
     }
 
-    private async void PlayButton_Click(object sender, RoutedEventArgs e)
+    private void PlayButton_Click(object sender, RoutedEventArgs e)
+    {
+        _ = PlayAsync();
+    }
+
+    private async Task PlayAsync()
     {
         if (_coordinator.State == AutomationState.Playing)
         {
@@ -526,7 +533,12 @@ public partial class MainWindow : Window, IDisposable
         }
     }
 
-    private async void StopButton_Click(object sender, RoutedEventArgs e)
+    private void StopButton_Click(object sender, RoutedEventArgs e)
+    {
+        _ = StopAsync();
+    }
+
+    private async Task StopAsync()
     {
         try
         {
@@ -539,7 +551,12 @@ public partial class MainWindow : Window, IDisposable
         }
     }
 
-    private async void AutoClickerStartButton_Click(object sender, RoutedEventArgs e)
+    private void AutoClickerStartButton_Click(object sender, RoutedEventArgs e)
+    {
+        _ = AutoClickerAsync();
+    }
+
+    private async Task AutoClickerAsync()
     {
         if (_coordinator.State == AutomationState.AutoClicking)
         {
@@ -845,37 +862,53 @@ public partial class MainWindow : Window, IDisposable
                     return;
                 }
 
-                try
-                {
-                    switch (e.Command)
-                    {
-                        case HotkeyCommand.Record:
-                            if (string.Equals(_preferences.LastSurface, WorkspaceSurfaceNames.AutoClicker, StringComparison.OrdinalIgnoreCase))
-                            {
-                                AutoClickerStartButton_Click(this, new RoutedEventArgs());
-                            }
-                            else
-                            {
-                                RecordButton_Click(this, new RoutedEventArgs());
-                            }
-                            break;
-                        case HotkeyCommand.Play:
-                            PlayButton_Click(this, new RoutedEventArgs());
-                            break;
-                        case HotkeyCommand.Stop:
-                            StopButton_Click(this, new RoutedEventArgs());
-                            break;
-                    }
-                }
-                catch (Exception exception)
-                {
-                    ShowError(exception);
-                }
+                _ = ExecuteHotkeyAsync(e.Command);
             }));
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (exception is InvalidOperationException or TaskCanceledException)
         {
             // The dispatcher may be shutting down while the hotkey thread is still unwinding.
+            Debug.WriteLine(exception);
+        }
+    }
+
+    private async Task ExecuteHotkeyAsync(HotkeyCommand command)
+    {
+        if (!await _hotkeyExecutionGate.WaitAsync(0))
+        {
+            return;
+        }
+
+        try
+        {
+            switch (command)
+            {
+                case HotkeyCommand.Record:
+                    if (string.Equals(_preferences.LastSurface, WorkspaceSurfaceNames.AutoClicker, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await AutoClickerAsync();
+                    }
+                    else
+                    {
+                        RecordButton_Click(this, new RoutedEventArgs());
+                    }
+
+                    break;
+                case HotkeyCommand.Play:
+                    await PlayAsync();
+                    break;
+                case HotkeyCommand.Stop:
+                    await StopAsync();
+                    break;
+            }
+        }
+        catch (Exception exception)
+        {
+            ShowError(exception);
+        }
+        finally
+        {
+            _hotkeyExecutionGate.Release();
         }
     }
 
